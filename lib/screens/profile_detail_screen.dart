@@ -93,6 +93,53 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     _load();
   }
 
+  Future<void> _deleteReminder(Reminder reminder) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete reminder?'),
+        content: Text('Remove the reminder for "${reminder.medicineName}".'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: AppTheme.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await _dbService.deleteReminder(reminder.id);
+    await _notificationService.cancel(reminder.id.hashCode);
+    _load();
+  }
+
+  Future<void> _deleteMedicine(Medicine medicine) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this entry?'),
+        content: Text('Remove "${medicine.name}" from ${widget.profile.name}\'s records.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: AppTheme.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await _dbService.deleteMedicine(medicine.id);
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,7 +176,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => ScanScreen(profileId: widget.profile.id)),
-                    ),
+                    ).then((_) => _load()),
                     icon: const Icon(Icons.camera_alt_rounded),
                     label: Text('Scan Medicine for ${widget.profile.name}'),
                   ),
@@ -148,6 +195,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           leading: const Icon(Icons.alarm, color: AppTheme.pine),
                           title: Text(r.medicineName),
                           subtitle: Text(r.timeLabel),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _deleteReminder(r),
+                          ),
                         ),
                       )),
                 const SizedBox(height: 24),
@@ -166,6 +217,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           title: Text(m.name),
                           subtitle: Text(
                               '${m.scannedAt.day}/${m.scannedAt.month}/${m.scannedAt.year}'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _deleteMedicine(m),
+                          ),
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(

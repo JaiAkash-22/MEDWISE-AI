@@ -27,6 +27,16 @@ class DatabaseService {
     await prefs.setStringList(_medicinesKey, raw);
   }
 
+  Future<void> deleteMedicine(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_medicinesKey) ?? [];
+    final updated = raw.where((s) {
+      final m = Medicine.fromJson(jsonDecode(s));
+      return m.id != id;
+    }).toList();
+    await prefs.setStringList(_medicinesKey, updated);
+  }
+
   Future<List<Profile>> getProfiles() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_profilesKey) ?? [];
